@@ -1,0 +1,46 @@
+# Render deployment blueprint for the FastAPI backend.
+# Push this file to the ROOT of your backend repo (fraud-backend/render.yaml),
+# then in Render dashboard: New -> Blueprint -> connect your GitHub repo.
+# Render will read this file and provision everything automatically.
+
+services:
+  - type: web
+    name: fraud-detection-backend
+    runtime: python
+    plan: free
+    region: singapore          # change to closest region if needed
+    branch: main
+    rootDir: .                 # change if backend lives in a subfolder, e.g. "backend"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /docs
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false            # set manually in Render dashboard (Postgres connection string)
+      - key: SECRET_KEY
+        generateValue: true    # Render auto-generates a strong random secret
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: GEMINI_API_KEY
+        sync: false            # set manually — leave blank if not available, AI layer falls back safely
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://your-frontend.vercel.app"   # update after Vercel deploy gives you the URL
+
+  # Optional managed Postgres (swap SQLite for production-grade demo)
+databases:
+  - name: fraud-detection-db
+    plan: free
+    region: singapore
